@@ -1,18 +1,21 @@
 #!/bin/bash
 # From https://github.com/etcd-io/etcd/releases/tag/v3.4.2
+set -e
+
 ETCD_VER=v3.4.2
 
-# choose either URL
-GOOGLE_URL=https://storage.googleapis.com/etcd
-GITHUB_URL=https://github.com/etcd-io/etcd/releases/download
-DOWNLOAD_URL=${GOOGLE_URL}
+if [ ! -f /opt/etcd/etcd ]; then
+  mkdir -p /opt/etcd
 
-rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
-rm -rf /tmp/etcd-download-test && mkdir -p /tmp/etcd-download-test
+  # choose either URL
+  GOOGLE_URL=https://storage.googleapis.com/etcd
+  GITHUB_URL=https://github.com/etcd-io/etcd/releases/download
+  DOWNLOAD_URL=${GITHUB_URL}
 
-curl -L ${DOWNLOAD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz -o /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
-tar xzvf /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz -C /tmp/etcd-download-test --strip-components=1
-rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
+  curl -L ${DOWNLOAD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz -o /opt/etcd-${ETCD_VER}-linux-amd64.tar.gz
 
-/tmp/etcd-download-test/etcd --version
-/tmp/etcd-download-test/etcdctl version
+  tar xzvf /opt/etcd-${ETCD_VER}-linux-amd64.tar.gz -C /opt/etcd --strip-components=1
+fi
+
+/opt/etcd/etcd --version
+/opt/etcd/etcdctl version

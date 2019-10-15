@@ -1,10 +1,9 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-# All Vagrant configuration is done below. The "2" in Vagrant.configure
-# configures the configuration version (we support older styles for
-# backwards compatibility). Please don't change it unless you know what
-# you're doing.
+IP_PREFIX = "192.168.10.1"
+IGNORE_PFERR = "Swap,NumCPU"
+
 Vagrant.configure("2") do |config|
 
   if Vagrant.has_plugin?("vagrant-proxyconf")
@@ -12,6 +11,11 @@ Vagrant.configure("2") do |config|
     config.proxy.https    = "#{ENV['HTTP_PROXY']}"
     config.proxy.no_proxy = "#{ENV['NO_PROXY']}"
   end
+
+  config.hostmanager.enabled = true
+  config.hostmanager.manage_host = false
+  config.hostmanager.manage_guest = true
+  config.hostmanager.include_offline = true
 
   config.vm.box = "centos/7"
   config.vm.provider "virtualbox" do |vb|
@@ -21,28 +25,60 @@ Vagrant.configure("2") do |config|
 
   (1..3).each do |i|
     config.vm.define "node-#{i}" do |v|
-      v.vm.network "private_network", ip: "192.168.1.1#{i}"
+      v.vm.hostname = "node-#{i}"
+      v.vm.network "private_network", ip: "#{IP_PREFIX}#{i}"
+      
+      v.vm.provision "shell", name: "Etcd service", inline: <<-EOF
+        cp /vagrant/etcd.service /etc/systemd/system/
+        sed -i -e 's/${HOSTNAME}/node-#{i}/g' \
+               -e 's/${HOSTIP}/#{IP_PREFIX}#{i}/g' \
+               -e 's/${ETCDNAME}/etcd#{i}/g' \
+               -e 's/${IP_PREFIX}/#{IP_PREFIX}/g' \
+               /etc/systemd/system/etcd.service
+
+        systemctl daemon-reload
+        systemctl enable --now --no-block etcd
+      EOF
+      
+      v.vm.provision "shell", name: "K8s bin", path: "./install-k8s-binaries.sh"
+
+      v.vm.provision "shell", name: "Kubeadm", inline: <<-EOF
+        if [ #{i} -eq 1 ]; then
+          curl -ks https://localhost:6443 || kubeadm init --config /vagrant/kubeadm-config.yml --ignore-preflight-errors=#{IGNORE_PFERR}
+        else
+          kubeadm join --config /vagrant/kubeadm-config.yml --ignore-preflight-errors=#{IGNORE_PFERR} 192.168.10.11:6443
+        fi
+      EOF
+    
     end
   end
 
   config.vm.provision "shell", name: "CA dependencies", inline: <<-EOF
     yum install -y ca-certificates
   EOF
-
+  
   if Vagrant.has_plugin?("vagrant-proxyconf") && Dir.exists?("./ssl")
     config.vm.provision "shell", name: "Provisionning proxy custom certificates", inline: <<-EOF
-      cp /vagrant/ssl/*.pem /etc/pki/ca-trust/source/anchors/
-      update-ca-trust
+    cp /vagrant/ssl/*.pem /etc/pki/ca-trust/source/anchors/
+    update-ca-trust
     EOF
   end
-
-  config.vm.provision "shell", name: "Installing Docker", inline: <<-EOF
+  
+  config.vm.provision "shell", name: "Docker", inline: <<-EOF
     yum install -y yum-utils
     yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
     yum install -y docker-ce docker-ce-cli containerd.io
-  EOF
 
+    mkdir -p /etc/systemd/system/docker.service.d
+    echo '''[Service]
+Environment="DOCKER_OPTS=--iptables=false"''' > /etc/systemd/system/docker.service.d/10-docker-opts.conf
+
+    systemctl daemon-reload
+    systemctl enable --now docker
+  EOF
   
+  config.vm.provision "shell", name: "Etcd", path: "./install-etcd.sh"
+
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
   # `vagrant box outdated`. This is not recommended.
