@@ -66,4 +66,4 @@ This installs k8s binaries and uses kubeadm to bootstrap a control plane (kube-s
         HTTPS_PROXY = http://myproxy.org:port
         NO_PROXY = localhost,127.0.0.1,192.168.10.0/24
 
-If your proxy is of type MITM, you should create a `ssl` folder next to the `Vagrantfile` and put the proxy's root CA in here. Then add `custom_ssl` next to the `ca_dependencies` provisioner. 
+If your proxy is of type MITM, you should create a `ssl` folder next to the `Vagrantfile` and put the proxy's root CA in here. Then you can use the `custom_ssl` provisioner to trust these new CA. 
