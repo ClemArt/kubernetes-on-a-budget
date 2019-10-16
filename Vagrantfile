@@ -23,26 +23,43 @@ Vagrant.configure("2") do |config|
     vb.cpus = 1
   end
 
+  config.vm.provision "ca_dependencies", type: "shell", inline: <<-EOF
+    yum install -y ca-certificates
+  EOF
+
+  if Vagrant.has_plugin?("vagrant-proxyconf") && Dir.exists?("./ssl")
+    config.vm.provision "custom_ssl", type: "shell", inline: <<-EOF
+      cp /vagrant/ssl/*.pem /etc/pki/ca-trust/source/anchors/
+      update-ca-trust
+    EOF
+  end
+
+  config.vm.provision "file", source: "./scripts", destination: "/tmp/scripts"
+
   (1..3).each do |i|
     config.vm.define "node-#{i}" do |v|
       v.vm.hostname = "node-#{i}"
       v.vm.network "private_network", ip: "#{IP_PREFIX}#{i}"
-      
-      v.vm.provision "shell", name: "Etcd service", inline: <<-EOF
-        cp /vagrant/etcd.service /etc/systemd/system/
-        sed -i -e 's/${HOSTNAME}/node-#{i}/g' \
-               -e 's/${HOSTIP}/#{IP_PREFIX}#{i}/g' \
-               -e 's/${ETCDNAME}/etcd#{i}/g' \
-               -e 's/${IP_PREFIX}/#{IP_PREFIX}/g' \
-               /etc/systemd/system/etcd.service
 
-        systemctl daemon-reload
-        systemctl enable --now --no-block etcd
+      v.vm.provision "placeholders", type: "shell", inline: <<-EOF
+        sed -i -e 's/${HOST_NAME}/node-#{i}/g' \
+               -e 's/${HOST_IP}/#{IP_PREFIX}#{i}/g' \
+               -e 's/${ETCD_NAME}/etcd#{i}/g' \
+               -e 's/${PEER1_IP}/#{IP_PREFIX}1/g' \
+               -e 's/${PEER2_IP}/#{IP_PREFIX}2/g' \
+               -e 's/${PEER3_IP}/#{IP_PREFIX}3/g' \
+               /tmp/scripts/*
+          
+        chmod +x /tmp/scripts/*.sh
       EOF
-      
-      v.vm.provision "shell", name: "K8s bin", path: "./install-k8s-binaries.sh"
 
-      v.vm.provision "shell", name: "Kubeadm", inline: <<-EOF
+      v.vm.provision "docker", type: "shell", inline: "/tmp/scripts/docker-install.sh"
+
+      v.vm.provision "etcd", type: "shell", inline: "/tmp/scripts/etcd-install.sh"
+
+      v.vm.provision "k8s", type: "shell", inline: "/tmp/scripts/install-k8s-binaries.sh"
+
+      v.vm.provision "kubeadm", type: "shell", inline: <<-EOF
         if [ #{i} -eq 1 ]; then
           curl -ks https://localhost:6443 || kubeadm init --config /vagrant/kubeadm-config.yml --ignore-preflight-errors=#{IGNORE_PFERR}
         else
@@ -52,32 +69,6 @@ Vagrant.configure("2") do |config|
     
     end
   end
-
-  config.vm.provision "shell", name: "CA dependencies", inline: <<-EOF
-    yum install -y ca-certificates
-  EOF
-  
-  if Vagrant.has_plugin?("vagrant-proxyconf") && Dir.exists?("./ssl")
-    config.vm.provision "shell", name: "Provisionning proxy custom certificates", inline: <<-EOF
-    cp /vagrant/ssl/*.pem /etc/pki/ca-trust/source/anchors/
-    update-ca-trust
-    EOF
-  end
-  
-  config.vm.provision "shell", name: "Docker", inline: <<-EOF
-    yum install -y yum-utils
-    yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-    yum install -y docker-ce docker-ce-cli containerd.io
-
-    mkdir -p /etc/systemd/system/docker.service.d
-    echo '''[Service]
-Environment="DOCKER_OPTS=--iptables=false"''' > /etc/systemd/system/docker.service.d/10-docker-opts.conf
-
-    systemctl daemon-reload
-    systemctl enable --now docker
-  EOF
-  
-  config.vm.provision "shell", name: "Etcd", path: "./install-etcd.sh"
 
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
