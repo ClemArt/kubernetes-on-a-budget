@@ -7,6 +7,7 @@ yum install -y docker-ce docker-ce-cli containerd.io
 mkdir -p /etc/systemd/system/docker.service.d
 cat <<EOF > /etc/systemd/system/docker.service.d/10-docker-opts.conf
 [Service]
+ExecStart=
 ExecStart=/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock --iptables=false --ip-masq=false
 EOF
 
