@@ -30,9 +30,9 @@ dns:
 etcd:
   external:
     endpoints:
-      - http://node-1:2379
-      - http://node-2:2379
-      - http://node-3:2379
+      - http://${PEER1_IP}:2379
+      - http://${PEER2_IP}:2379
+      - http://${PEER3_IP}:2379
 imageRepository: k8s.gcr.io
 kind: ClusterConfiguration
 kubernetesVersion: v1.16.0

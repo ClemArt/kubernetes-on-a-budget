@@ -41,7 +41,7 @@ Vagrant.configure("2") do |config|
       v.vm.hostname = "node-#{i}"
       v.vm.network "private_network", ip: "#{IP_PREFIX}#{i}"
 
-      v.vm.provision "placeholders", type: "shell", inline: <<-EOF
+      v.vm.provision "placeholder", type: "shell", inline: <<-EOF
         sed -i -e 's/${HOST_NAME}/node-#{i}/g' \
                -e 's/${HOST_IP}/#{IP_PREFIX}#{i}/g' \
                -e 's/${ETCD_NAME}/etcd#{i}/g' \
@@ -61,9 +61,9 @@ Vagrant.configure("2") do |config|
 
       v.vm.provision "kubeadm", type: "shell", inline: <<-EOF
         if [ #{i} -eq 1 ]; then
-          curl -ks https://localhost:6443 || kubeadm init --config /vagrant/kubeadm-config.yml --ignore-preflight-errors=#{IGNORE_PFERR}
+          kubeadm init --config /tmp/scripts/kubeadm-config.yml --ignore-preflight-errors=#{IGNORE_PFERR}
         else
-          kubeadm join --config /vagrant/kubeadm-config.yml --ignore-preflight-errors=#{IGNORE_PFERR} 192.168.10.11:6443
+          kubeadm join --config /tmp/scripts/kubeadm-config.yml --ignore-preflight-errors=#{IGNORE_PFERR} 192.168.10.11:6443
         fi
       EOF
     

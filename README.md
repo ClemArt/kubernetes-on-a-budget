@@ -9,11 +9,9 @@ A small demonstration of how to run a k8s cluster on 3 lowcost VM, automatically
   - [Provisioning VM, dependencies & Data plane](#provisioning-vm-dependencies--data-plane)
   - [Provisioning K8S](#provisioning-k8s)
 - [Step by Step Provisioning](#step-by-step-provisioning)
-  - [Provision VM](#provision-vm)
-  - [Install Docker](#install-docker)
-  - [Install Etcd](#install-etcd)
 - [Troubleshoting](#troubleshoting)
   - [Entreprise proxy](#entreprise-proxy)
+- [Sources & Credits](#sources--credits)
 
 # Installed components
 
@@ -27,7 +25,7 @@ A small demonstration of how to run a k8s cluster on 3 lowcost VM, automatically
 ## Provisioning VM, dependencies & Data plane
 In a terminal run
 
-    vagrant up --provision-with "ca_dependencies,file,placeholders,docker,etcd"
+    vagrant up --provision-with "ca_dependencies,file,placeholder,docker,etcd"
 
 This installs CA certificates, provisioning shell scripts, then launches Docker and Etcd
 
@@ -43,17 +41,21 @@ This installs k8s binaries and uses kubeadm to bootstrap a control plane (kube-s
 **node-1** is the cluster's master, and the API endpoint is reachable at https://192.168.10.11:6443
 
 # Step by Step Provisioning
-## Provision VM
 
-    vagrant up --provision-with "ca_dependencies,file,placeholders"
+    vagrant provision --provision-with "provider1,provider2,..."
 
-## Install Docker
+Each provider is a shell script with a specific goal :
 
-    vagrant provision --provision-with "docker"
-
-## Install Etcd
-
-    vagrant provision --provision-with "etcd"
+|            name | actions                                                                                                                                                          |
+|----------------:|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ca_dependencies | Install ca-certificates yum package                                                                                                                              |
+|      custom_ssl | Copy the content of the `ssl` folder in working directory to the trusted CA sources of centos, then update the trust CA bundle                                   |
+|            file | Copy `scripts` folder in `guest:/tmp/scripts`                                                                                                                    |
+|     placeholder | Use `sed` to replace some `${PLACEHOLDER}` in the script files (sort of very light templating)                                                                   |
+|          docker | Install and configure Docker daemon                                                                                                                              |
+|            etcd | Install and configure a 3 nodes ETCD cluster. *Mandatory* to run k8s & kubeadm steps                                                                             |
+|             k8s | Install k8s binaries                                                                                                                                             |
+|         kubeadm | Boostrap node-1 as a k8s master, then join node-{2,3} as worker nodes. Configure the control plane and kubelet, using a totally insecure token to join the nodes |
 
 # Troubleshoting
 ## Entreprise proxy
@@ -66,4 +68,12 @@ This installs k8s binaries and uses kubeadm to bootstrap a control plane (kube-s
         HTTPS_PROXY = http://myproxy.org:port
         NO_PROXY = localhost,127.0.0.1,192.168.10.0/24
 
-If your proxy is of type MITM, you should create a `ssl` folder next to the `Vagrantfile` and put the proxy's root CA in here. Then you can use the `custom_ssl` provisioner to trust these new CA. 
+If your proxy is of type MITM, you should create a `ssl` folder next to the `Vagrantfile` and put the proxy's root CA in here. Then you can use the `custom_ssl` provisioner to trust these new CA.
+
+# Sources & Credits
+
+* Hobby-kube : https://github.com/hobby-kube/guide
+* Kubernetes the hard way : https://github.com/kelseyhightower/kubernetes-the-hard-way
+* Kubernetes Docs : https://kubernetes.io/docs/home/
+* Docker Docs
+* Weave net : https://www.weave.works/docs/net/latest/kubernetes/
