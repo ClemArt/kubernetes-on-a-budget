@@ -11,6 +11,7 @@ A small demonstration of how to run a k8s cluster on 3 lowcost VM, automatically
 - [Step by Step Provisioning](#step-by-step-provisioning)
 - [Addons](#addons)
   - [Metrics](#metrics)
+  - [Dashboard](#dashboard)
 - [Troubleshoting](#troubleshoting)
   - [Entreprise proxy](#entreprise-proxy)
 - [Sources & Credits](#sources--credits)
@@ -65,6 +66,9 @@ Each provider is a shell script with a specific goal (in order of provisioning) 
 # Addons
 ## Metrics
 See [metrics-server](./metrics-server/README.md)
+
+## Dashboard
+See [Dashboard](./dashboard/README.md)
 
 # Troubleshoting
 ## Entreprise proxy
