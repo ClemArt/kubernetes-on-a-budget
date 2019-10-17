@@ -9,7 +9,7 @@ Vagrant.configure("2") do |config|
   if Vagrant.has_plugin?("vagrant-proxyconf")
     config.proxy.http     = "#{ENV['HTTP_PROXY']}"
     config.proxy.https    = "#{ENV['HTTP_PROXY']}"
-    config.proxy.no_proxy = "#{ENV['NO_PROXY']}"
+    config.proxy.no_proxy = "#{ENV['NO_PROXY']},10.96.0.0/12,10.80.0.0/12,#{IP_PREFIX}0/24"
   end
 
   config.hostmanager.enabled = true

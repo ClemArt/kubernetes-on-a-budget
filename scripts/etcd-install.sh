@@ -21,4 +21,5 @@ tar xzvf /opt/etcd-${ETCD_VER}-linux-amd64.tar.gz -C /opt/etcd --strip-component
 cp /tmp/scripts/etcd.service /etc/systemd/system/
 
 systemctl daemon-reload
-systemctl enable --now --no-block etcd
+systemctl enable etcd
+systemctl restart --no-block etcd

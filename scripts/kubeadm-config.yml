@@ -9,7 +9,7 @@ bootstrapTokens:
       - authentication
 kind: InitConfiguration
 localAPIEndpoint:
-  advertiseAddress: 0.0.0.0
+  advertiseAddress: ${PEER1_IP}
   bindPort: 6443
 nodeRegistration:
   taints:
@@ -25,6 +25,7 @@ apiVersion: kubeadm.k8s.io/v1beta2
 certificatesDir: /etc/kubernetes/pki
 clusterName: kubernetes
 controllerManager: {}
+controlPlaneEndpoint: ${PEER1_IP}
 dns:
   type: CoreDNS
 etcd:

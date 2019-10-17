@@ -19,7 +19,8 @@ sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
 echo "Install kubernetes components"
 yum install -y kubelet kubeadm kubectl --disableexcludes=kubernetes
 
-systemctl enable --now kubelet
+systemctl enable kubelet
+systemctl restart kubelet
 
 echo "Enable bridge mod"
 modprobe br_netfilter
