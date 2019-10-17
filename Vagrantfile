@@ -9,7 +9,7 @@ Vagrant.configure("2") do |config|
   if Vagrant.has_plugin?("vagrant-proxyconf")
     config.proxy.http     = "#{ENV['HTTP_PROXY']}"
     config.proxy.https    = "#{ENV['HTTP_PROXY']}"
-    config.proxy.no_proxy = "#{ENV['NO_PROXY']},10.96.0.0/12,10.80.0.0/12,#{IP_PREFIX}0/24"
+    config.proxy.no_proxy = "#{ENV['NO_PROXY']},10.96.0.0/12,10.80.0.0/12,#{IP_PREFIX}1,#{IP_PREFIX}2,#{IP_PREFIX}3"
   end
 
   config.hostmanager.enabled = true
@@ -23,8 +23,9 @@ Vagrant.configure("2") do |config|
     vb.cpus = 1
   end
 
-  config.vm.provision "ca_dependencies", type: "shell", inline: <<-EOF
-    yum install -y ca-certificates
+  config.vm.provision "prerequisite", type: "shell", inline: <<-EOF
+    yum install -y ca-certificates ntp
+    systemctl enable --now ntpd
   EOF
 
   if Vagrant.has_plugin?("vagrant-proxyconf") && Dir.exists?("./ssl")

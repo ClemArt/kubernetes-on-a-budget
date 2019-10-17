@@ -9,6 +9,8 @@ A small demonstration of how to run a k8s cluster on 3 lowcost VM, automatically
   - [Provisioning VM, dependencies & Data plane](#provisioning-vm-dependencies--data-plane)
   - [Provisioning K8S](#provisioning-k8s)
 - [Step by Step Provisioning](#step-by-step-provisioning)
+- [Addons](#addons)
+  - [Metrics](#metrics)
 - [Troubleshoting](#troubleshoting)
   - [Entreprise proxy](#entreprise-proxy)
 - [Sources & Credits](#sources--credits)
@@ -25,9 +27,9 @@ A small demonstration of how to run a k8s cluster on 3 lowcost VM, automatically
 ## Provisioning VM, dependencies & Data plane
 In a terminal run
 
-    vagrant up --provision-with "ca_dependencies,file,placeholder,docker,etcd"
+    vagrant up --provision-with "prerequisite,file,placeholder,docker,etcd"
 
-This installs CA certificates, provisioning shell scripts, then launches Docker and Etcd
+This installs prerequisites, provisioning shell scripts, then launches Docker and Etcd
 
 Etcd is created as a 3 member cluster scatered accross the 3 VMs. It's provisioned by hand for demonstration purpose only. One could use kubeadm in the next step with the `--control-plane` option to provision a secured and resilient data plane.
 
@@ -46,19 +48,23 @@ Installs WeaveNet **unencrypted** as a CNI plugin provider.
 
     vagrant provision --provision-with "provider1,provider2,..."
 
-Each provider is a shell script with a specific goal :
+Each provider is a shell script with a specific goal (in order of provisioning) :
 
-| name            | actions                                                                                                                                                          |
-|-----------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| ca_dependencies | Install ca-certificates yum package                                                                                                                              |
-| custom_ssl      | Copy the content of the `ssl` folder in working directory to the trusted CA sources of centos, then update the trust CA bundle                                   |
-| file            | Copy `scripts` folder in `guest:/tmp/scripts`                                                                                                                    |
-| placeholder     | Use `sed` to replace some `${PLACEHOLDER}` in the script files (sort of very light templating)                                                                   |
-| docker          | Install and configure Docker daemon                                                                                                                              |
-| etcd            | Install and configure a 3 nodes ETCD cluster. *Mandatory* to run k8s & kubeadm steps                                                                             |
-| k8s             | Install k8s binaries                                                                                                                                             |
-| kubeadm         | Boostrap node-1 as a k8s master, then join node-{2,3} as worker nodes. Configure the control plane and kubelet, using a totally insecure token to join the nodes |
-| k8s_cni         | Install WeaveNet CNI plugin by applying the `net.yml` file to the cluster's master (*node-1*)                                                                    |
+| name         | actions                                                                                                                                                          |
+|--------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| prerequisite | Install prerequisites yum package                                                                                                                                |
+| custom_ssl   | Copy the content of the `ssl` folder in working directory to the trusted CA sources of centos, then update the trust CA bundle                                   |
+| file         | Copy `scripts` folder in `guest:/tmp/scripts`                                                                                                                    |
+| placeholder  | Use `sed` to replace some `${PLACEHOLDER}` in the script files (sort of very light templating)                                                                   |
+| docker       | Install and configure Docker daemon                                                                                                                              |
+| etcd         | Install and configure a 3 nodes ETCD cluster. *Mandatory* to run k8s & kubeadm steps                                                                             |
+| k8s          | Install k8s binaries                                                                                                                                             |
+| kubeadm      | Boostrap node-1 as a k8s master, then join node-{2,3} as worker nodes. Configure the control plane and kubelet, using a totally insecure token to join the nodes |
+| k8s_cni      | Install WeaveNet CNI plugin by applying the `net.yml` file to the cluster's master (*node-1*)                                                                    |
+
+# Addons
+## Metrics
+See [metrics-server](./metrics-server/README.md)
 
 # Troubleshoting
 ## Entreprise proxy
