@@ -34,11 +34,13 @@ Etcd is created as a 3 member cluster scatered accross the 3 VMs. It's provision
 ## Provisioning K8S
 In a terminal run
 
-    vagrant provision --provision-with "k8s,kubeadm"
+    vagrant provision --provision-with "k8s,kubeadm,k8s_cni"
 
-This installs k8s binaries and uses kubeadm to bootstrap a control plane (kube-scheduler, kube-apiserver, coredns, kube-controller-manager)
+This installs k8s binaries and uses kubeadm to bootstrap a control plane (kube-scheduler, kube-apiserver, coredns, kube-controller-manager).
 
-**node-1** is the cluster's master, and the API endpoint is reachable at https://192.168.10.11:6443
+**node-1** is the cluster's master, and the API endpoint is reachable at https://192.168.10.11:6443.
+
+Installs WeaveNet **unencrypted** as a CNI plugin provider.
 
 # Step by Step Provisioning
 
@@ -56,6 +58,7 @@ Each provider is a shell script with a specific goal :
 | etcd            | Install and configure a 3 nodes ETCD cluster. *Mandatory* to run k8s & kubeadm steps                                                                             |
 | k8s             | Install k8s binaries                                                                                                                                             |
 | kubeadm         | Boostrap node-1 as a k8s master, then join node-{2,3} as worker nodes. Configure the control plane and kubelet, using a totally insecure token to join the nodes |
+| k8s_cni         | Install WeaveNet CNI plugin by applying the `net.yml` file to the cluster's master (*node-1*)                                                                    |
 
 # Troubleshoting
 ## Entreprise proxy
@@ -75,5 +78,5 @@ If your proxy is of type MITM, you should create a `ssl` folder next to the `Vag
 * Hobby-kube : https://github.com/hobby-kube/guide
 * Kubernetes the hard way : https://github.com/kelseyhightower/kubernetes-the-hard-way
 * Kubernetes Docs : https://kubernetes.io/docs/home/
-* Docker Docs
+* Docker Docs : https://docs.docker.com/reference/
 * Weave net : https://www.weave.works/docs/net/latest/kubernetes/

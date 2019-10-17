@@ -66,6 +66,16 @@ Vagrant.configure("2") do |config|
           kubeadm join --config /tmp/scripts/kubeadm-config.yml --ignore-preflight-errors=#{IGNORE_PFERR} 192.168.10.11:6443
         fi
       EOF
+
+      if (i == 1)
+        v.vm.provision "k8s_cni", type: "shell",
+        env: { "KUBECONFIG" => "/etc/kubernetes/admin.conf" }, inline: <<-EOF
+          echo "Applying weavenet CNI addon to cluster"
+          kubectl apply -f /tmp/scripts/net.yml
+          sleep 30
+          kubectl get node
+        EOF
+      end
     
     end
   end
